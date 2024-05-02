@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import TodoList from "@/components/TodoList";
 import { db } from "@/db";
 

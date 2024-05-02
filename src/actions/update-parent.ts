@@ -1,26 +1,72 @@
-import { db } from "@/db"
+import { db } from "@/db";
+import { Todo } from "@prisma/client";
 
-export async function updateParent(parentId: number) {
+interface UpdateParentProps {
+  parentId: number;
+  elapsed?: number;
+}
+
+export async function updateParent({ parentId, elapsed }: UpdateParentProps) {
   const parent = await db.todo.findUnique({
     where: { id: parentId },
     include: { children: true },
-  })
+  });
 
-  if (!parent) { return }
+  if (!parent) {
+    return;
+  }
 
-  const status = !parent.children.length ? "not-started"
-    : parent.children.every((child) => child.status === "completed") ? "completed"
-    : parent.children.every((child) => child.status === "not-started") ? "not-started"
-    : "inporgress"
+  const duration = parent.children.reduce<any>(
+    (acc, child) => {
+      const childDuration = child.duration
+      if (childDuration) {
+        return (acc ?? 0) + childDuration;
+      }
+      return acc;
+    }, null);
 
-  const duration = parent.children.reduce((acc, child) => acc + child.duration, 0)
-  
+  const data: any = { duration };
+  if (elapsed) {
+    data.timeSpent = parent.timeSpent + elapsed;
+  }
+
+  const newParent = await db.todo.update({
+    where: { id: parentId },
+    data,
+    include: { children: true },
+  });
+
+  const status = getStatus(newParent);
+
   await db.todo.update({
     where: { id: parentId },
-    data: { status, duration },
-  })
+    data: {
+      status,
+      done: status === "completed",
+    },
+  });
 
   if (parent.parentId) {
-    await updateParent(parent.parentId)
+    const props: any = { parentId: parent.parentId };
+    if (elapsed) {
+      props.elapsed = elapsed;
+    }
+    await updateParent(props);
   }
+}
+
+interface TodoWithChildren extends Todo {
+  children: Todo[];
+}
+
+function getStatus(todo: TodoWithChildren) {
+  if (todo.children.length === 0) {
+    if (todo.timeSpent) return "pause"
+    return "not-started";
+  }
+
+  if (todo.children.every((child) => child.status === "completed")) return "completed";
+  if (todo.children.some((child) => child.status === "in-progress")) return "in-progress";
+  if (todo.timeSpent) return "pause";
+  return "not-started";
 }

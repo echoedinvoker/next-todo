@@ -16,7 +16,8 @@ model Todo {
   description       String    @default("")
   status            String    @default("not-started")
   done              Boolean   @default(false)
-  duration          Int       @default(0)
+  timeSpent         Int       @default(0)
+  duration          Int? 
   parentId          Int?      
   parent            Todo?     @relation(name: "TodoTree", fields: [parentId], references: [id])
   children          Todo[]    @relation(name: "TodoTree")

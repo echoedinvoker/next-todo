@@ -1,6 +1,6 @@
 "use client";
 
-import { addTodo } from "@/actions";
+import { editTodo } from "@/actions/edit-todo";
 import {
   Modal,
   ModalBody,
@@ -10,10 +10,15 @@ import {
   ModalFooter,
   Button,
 } from "@nextui-org/react";
+import { useState } from "react";
 import { useFormState } from "react-dom";
 
-export default function AddTodoModal({ isOpen, onOpenChange, parentId }: any) {
-  const [_, action] = useFormState(addTodo, null as any);
+export default function EditTodoModal({ isOpen, onOpenChange, todo }: any) {
+  const [formState, action] = useFormState(editTodo, { message: "" });
+  const [name, setName] = useState(todo.title);
+  const [description, setDescription] = useState(todo.description);
+  const [duration, setDuration] = useState(todo.duration ?? "");
+  const [timeSpentMin, setTimeSpentMin] = useState(Math.floor(todo.timeSpent / 1000 / 60).toString());
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
@@ -29,6 +34,8 @@ export default function AddTodoModal({ isOpen, onOpenChange, parentId }: any) {
                 name="title"
                 placeholder="Enter TODO name"
                 variant="bordered"
+                value={name}
+                onValueChange={setName}
               />
               <Input
                 autoFocus
@@ -36,6 +43,8 @@ export default function AddTodoModal({ isOpen, onOpenChange, parentId }: any) {
                 name="description"
                 placeholder="Enter TODO description"
                 variant="bordered"
+                value={description}
+                onValueChange={setDescription}
               />
               <Input
                 autoFocus
@@ -44,15 +53,28 @@ export default function AddTodoModal({ isOpen, onOpenChange, parentId }: any) {
                 placeholder="Enter TODO duration"
                 variant="bordered"
                 type="number"
+                value={duration}
+                onValueChange={setDuration}
               />
-              <input name="parentId" type="hidden" value={parentId} />
+              <Input
+                autoFocus
+                label="Elasped (min, optional)"
+                name="timeSpentMin"
+                placeholder="Enter TODO elasped"
+                variant="bordered"
+                type="number"
+                value={timeSpentMin}
+                onValueChange={setTimeSpentMin}
+              />
+              <input name="id" type="hidden" value={todo.id} />
+              <input name="oldTimeSpent" type="hidden" value={todo.timeSpent} />
             </ModalBody>
             <ModalFooter>
               <Button color="danger" variant="flat" onPress={onClose}>
                 Close
               </Button>
               <Button color="primary" onPress={onClose} type="submit">
-                Add TODO
+                Edit TODO
               </Button>
             </ModalFooter>
           </form>
